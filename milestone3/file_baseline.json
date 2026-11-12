@@ -1,0 +1,48 @@
+{
+  "input": {
+    "operations": [
+      {
+        "command": "mkdir",
+        "path": "/docs"
+      },
+      {
+        "command": "mkfile",
+        "path": "/docs/a.txt"
+      },
+      {
+        "command": "write",
+        "path": "/docs/a.txt",
+        "content": "hello"
+      },
+      {
+        "command": "cat",
+        "path": "/docs/a.txt"
+      }
+    ]
+  },
+  "expected": {
+    "outputs": [
+      "Created",
+      "Created",
+      "hello",
+      "hello"
+    ],
+    "stats": {
+      "files": 1,
+      "directories": 2,
+      "bytes": 5
+    },
+    "entries": {
+      "/": {
+        "type": "dir"
+      },
+      "/docs": {
+        "type": "dir"
+      },
+      "/docs/a.txt": {
+        "type": "file",
+        "content": "hello"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "input": {
+    "addresses": [
+      0,
+      4096,
+      0,
+      8192,
+      4096
+    ],
+    "page_size": 4096,
+    "frames": 2,
+    "policy": "FIFO"
+  },
+  "expected": {
+    "references": 5,
+    "hits": 2,
+    "faults": 3,
+    "evictions": 1
+  }
+}

@@ -1,0 +1,93 @@
+"""Cross-component OS simulation pipeline: Process + Memory Manager + FileSystem."""
+from typing import List, Dict, Any, Optional
+from engine.process import Process, simulate as simulate_processes
+from engine.memory_manager import simulate_fifo, simulate_lru
+from engine.filesystem import FileSystem
+
+
+def run_integrated_simulation(
+    processes: List[Process],
+    algorithm: str = "Round Robin",
+    quantum: int = 3,
+    frame_capacity: int = 4,
+    memory_policy: str = "LRU",
+    filesystem: Optional[FileSystem] = None,
+    permissions: Optional[Dict[str, Dict[str, Any]]] = None,
+    persist_system_logs: bool = True,
+) -> Dict[str, Any]:
+    """
+    Execute an end-to-end OS simulation connecting:
+      1. Process Scheduler (generates CPU schedule, Blocked/Ready transitions, memory refs, file I/O)
+      2. FileSystem (enforces per-process path authorization & persists process/system files)
+      3. Memory Manager (consumes process-generated page reference stream under FIFO/LRU)
+    """
+    fs = filesystem if filesystem is not None else FileSystem()
+
+    if permissions:
+        for pid, policy in permissions.items():
+            fs.authorize_process(
+                pid=pid,
+                allowed_prefixes=policy.get("prefixes", []),
+                read_only=policy.get("read_only", False),
+            )
+
+    # 1. Run CPU scheduler with live FileSystem and process memory reference generation
+    proc_result = simulate_processes(
+        processes=processes,
+        algorithm=algorithm,
+        quantum=quantum,
+        filesystem=fs,
+    )
+
+    # 2. Feed process-generated page references into the Memory Manager
+    mem_refs = proc_result["memory_references"]
+    page_trace = [entry["page"] for entry in mem_refs]
+
+    if page_trace:
+        mem_func = simulate_fifo if memory_policy == "FIFO" else simulate_lru
+        mem_result = mem_func(page_trace, frame_capacity)
+        for step_row, ref_meta in zip(mem_result["steps"], mem_refs):
+            step_row["PID"] = ref_meta["pid"]
+            step_row["Time (ms)"] = ref_meta["time"]
+    else:
+        mem_result = {
+            "algorithm": memory_policy,
+            "capacity": frame_capacity,
+            "total_references": 0,
+            "hits": 0,
+            "faults": 0,
+            "fault_rate": 0.0,
+            "evictions": 0,
+            "simulated_latency_ns": 0,
+            "steps": [],
+        }
+
+    # 3. Connect Memory Manager output -> FileSystem (/sys/memory_report.txt)
+    if persist_system_logs:
+        if "/sys" not in fs.entries:
+            fs.execute("mkdir", "/sys", pid="kernel")
+        report_lines = [
+            f"Policy: {mem_result['algorithm']} | Frames: {frame_capacity}",
+            f"Total References: {mem_result['total_references']}",
+            f"Hits: {mem_result['hits']} | Faults: {mem_result['faults']} | Evictions: {mem_result['evictions']}",
+            f"Simulated Latency (ns): {mem_result['simulated_latency_ns']}",
+        ]
+        if "/sys/memory_report.txt" not in fs.entries:
+            fs.execute("mkfile", "/sys/memory_report.txt", pid="kernel")
+        fs.execute("write", "/sys/memory_report.txt", content="\n".join(report_lines), pid="kernel")
+
+    state_transitions = [
+        ev for ev in proc_result["events"]
+        if ev["state"] in ("Blocked", "Ready", "Running", "Terminated")
+    ]
+
+    return {
+        "process": proc_result,
+        "memory": mem_result,
+        "filesystem": {
+            "entries": dict(fs.entries),
+            "log": list(fs.log),
+            "stats": fs.stats(),
+        },
+        "state_transitions": state_transitions,
+    }

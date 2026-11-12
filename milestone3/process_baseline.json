@@ -1,0 +1,112 @@
+{
+  "input": {
+    "processes": [
+      {
+        "pid": "P1",
+        "arrival": 0,
+        "burst": 8,
+        "priority": 2
+      },
+      {
+        "pid": "P2",
+        "arrival": 1,
+        "burst": 4,
+        "priority": 1
+      },
+      {
+        "pid": "P3",
+        "arrival": 2,
+        "burst": 2,
+        "priority": 3
+      },
+      {
+        "pid": "P4",
+        "arrival": 4,
+        "burst": 5,
+        "priority": 2
+      }
+    ],
+    "algorithm": "FCFS",
+    "quantum": 4
+  },
+  "expected": {
+    "gantt": [
+      {
+        "pid": "P1",
+        "start": 0,
+        "end": 8
+      },
+      {
+        "pid": "P2",
+        "start": 8,
+        "end": 12
+      },
+      {
+        "pid": "P3",
+        "start": 12,
+        "end": 14
+      },
+      {
+        "pid": "P4",
+        "start": 14,
+        "end": 19
+      }
+    ],
+    "processes": [
+      {
+        "pid": "P1",
+        "arrival": 0,
+        "burst": 8,
+        "priority": 2,
+        "waiting": 0,
+        "response": 0,
+        "turnaround": 8,
+        "completion": 8,
+        "state": "Terminated"
+      },
+      {
+        "pid": "P2",
+        "arrival": 1,
+        "burst": 4,
+        "priority": 1,
+        "waiting": 7,
+        "response": 7,
+        "turnaround": 11,
+        "completion": 12,
+        "state": "Terminated"
+      },
+      {
+        "pid": "P3",
+        "arrival": 2,
+        "burst": 2,
+        "priority": 3,
+        "waiting": 10,
+        "response": 10,
+        "turnaround": 12,
+        "completion": 14,
+        "state": "Terminated"
+      },
+      {
+        "pid": "P4",
+        "arrival": 4,
+        "burst": 5,
+        "priority": 2,
+        "waiting": 10,
+        "response": 10,
+        "turnaround": 15,
+        "completion": 19,
+        "state": "Terminated"
+      }
+    ],
+    "metrics": {
+      "makespan": 19,
+      "cpu_busy": 19,
+      "cpu_utilization": 100.0,
+      "throughput": 0.21052631578947367,
+      "context_switches": 3,
+      "avg_waiting": 6.75,
+      "avg_response": 6.75,
+      "avg_turnaround": 11.5
+    }
+  }
+}
